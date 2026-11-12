@@ -64,7 +64,7 @@ try {
   assert.equal((await rpc("mon_tirage", { p_jeton: jeton })).statut, "pas_tire");
 
   // Foyer trop grand
-  for (const p of ["A3", "A4", "A5"]) await rpc("admin_participant_ajouter", { p_mdp: MDP, p_prenom: p, p_foyer_id: fA });
+  for (const p of ["A3", "A4", "A5", "A6"]) await rpc("admin_participant_ajouter", { p_mdp: MDP, p_prenom: p, p_foyer_id: fA });
   assert.deepEqual(await lancer(ed), { ok: false, raison: "foyer_trop_grand", detail: "Foyer A" });
   console.log("scenario : OK");
 } finally {
