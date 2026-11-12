@@ -1,0 +1,31 @@
+:root {
+  --fond: #f7f3ee; --carte: #ffffff; --texte: #2b2622; --muet: #6f665e;
+  --accent: #b3261e; --accent-texte: #ffffff; --bord: #e4dcd2; --info: #eef4f0; --alerte: #fdecea;
+  --rayon: 12px; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --fond: #1c1a18; --carte: #262321; --texte: #f1ece6; --muet: #a89f96; --bord: #3a3531;
+          --accent: #e0574e; --info: #22302a; --alerte: #3a2220; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fond); color: var(--texte); line-height: 1.5; }
+.page { max-width: 760px; margin: 0 auto; padding: 16px 16px 48px; }
+.entete { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.entete h1 { margin: 0; font-size: 1.5rem; }
+.carte { background: var(--carte); border: 1px solid var(--bord); border-radius: var(--rayon); padding: 16px; margin-bottom: 16px; }
+.carte h2 { margin: 0 0 8px; font-size: 1.15rem; }
+.ligne { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ligne > input, .ligne > select { flex: 1 1 160px; min-width: 0; }
+input, select { font: inherit; padding: 8px 10px; border: 1px solid var(--bord); border-radius: 8px; background: var(--carte); color: var(--texte); }
+.bouton { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-texte); cursor: pointer; }
+.bouton.secondaire { background: transparent; color: var(--accent); }
+.bouton.danger { background: transparent; color: var(--accent); border-color: var(--bord); }
+.bouton:disabled { opacity: .5; cursor: default; }
+.alerte { padding: 10px 12px; border-radius: 8px; background: var(--alerte); margin: 8px 0; }
+.alerte.info { background: var(--info); }
+.liste { list-style: none; margin: 0; padding: 0; }
+.liste > li { padding: 10px 0; border-top: 1px solid var(--bord); overflow-wrap: anywhere; }
+.liste > li:first-child { border-top: 0; }
+.muet { color: var(--muet); font-size: .95rem; }
+.receveur { font-size: 2rem; font-weight: 700; margin: 4px 0 8px; overflow-wrap: anywhere; }
+[hidden] { display: none !important; }
