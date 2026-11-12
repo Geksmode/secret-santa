@@ -12,11 +12,26 @@
   <main class="page">
     <header class="entete">
       <h1 id="bonjour" data-i18n="titre"></h1>
-      <select id="langue" aria-label="Langue"><option value="fr">FR</option><option value="en">EN</option></select>
+      <div class="ligne">
+        <select id="langue" aria-label="Langue"><option value="fr">FR</option><option value="en">EN</option></select>
+        <button type="button" id="pas-moi" class="bouton secondaire" data-i18n="pas_moi" hidden></button>
+      </div>
     </header>
 
     <div id="message" class="alerte" hidden></div>
     <p id="chargement" class="muet" data-i18n="chargement"></p>
+
+    <section id="accueil" class="carte accueil" hidden>
+      <div class="paquet-deco" aria-hidden="true"></div>
+      <h2 data-i18n="accueil_titre"></h2>
+      <form id="form-code">
+        <label class="visuellement-cache" for="code" data-i18n="accueil_titre"></label>
+        <input id="code" class="champ-code" autocomplete="off" autocapitalize="characters" spellcheck="false"
+               maxlength="12" inputmode="text" data-i18n-placeholder="code_exemple" required>
+        <button class="bouton" data-i18n="ouvrir"></button>
+      </form>
+      <p class="muet" data-i18n="accueil_aide"></p>
+    </section>
 
     <section id="bloc-tirage" class="carte" hidden>
       <div id="tire" hidden>

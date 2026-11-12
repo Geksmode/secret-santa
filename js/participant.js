@@ -2,11 +2,12 @@ import { appel } from "./api.js";
 import { t, traduire, brancherSelecteur, formaterDate } from "./i18n.js";
 import { lienValide, domaine } from "./liens.js";
 import { brancherRevelation } from "./revelation.js";
+import { normaliserCode, codePlausible } from "./code.js";
 
 let revelationBranchee = false;
 
 const $ = (id) => document.getElementById(id);
-const jeton = new URLSearchParams(location.search).get("t") ?? "";
+let jeton = new URLSearchParams(location.search).get("t") ?? "";
 let moi = null, tirage = null, envies = [];
 
 function el(tag, props = {}, enfants = []) {
@@ -102,19 +103,63 @@ $("form-envie").onsubmit = async (ev) => {
   } catch (e) { erreurEnvie(e); }
 };
 
-async function demarrer() {
-  traduire();
-  if (!jeton) { $("chargement").hidden = true; return message(t("lien_invalide")); }
+// ---------- Accueil : code personnel, mémorisé sur l'appareil ----------
+const CLE_JETON = "ss-jeton";
+function memoriser(j) { try { j ? localStorage.setItem(CLE_JETON, j) : localStorage.removeItem(CLE_JETON); } catch {} }
+function memorise() { try { return localStorage.getItem(CLE_JETON) ?? ""; } catch { return ""; } }
+
+function afficherAccueil(cleMessage) {
+  $("chargement").hidden = true;
+  $("accueil").hidden = false;
+  if (cleMessage) message(t(cleMessage));
+  $("code").focus({ preventScroll: true });
+}
+
+$("form-code").onsubmit = async (ev) => {
+  ev.preventDefault();
+  const saisie = $("code").value;
+  if (!codePlausible(saisie)) return message(t("code_format"));
+  const bouton = $("form-code").querySelector("button");
+  bouton.disabled = true;
+  try {
+    const j = await appel("jeton_par_code", { p_code: normaliserCode(saisie) });
+    if (!j) return message(t("code_inconnu"));
+    message("");
+    $("accueil").hidden = true;
+    $("chargement").hidden = false;
+    jeton = j;
+    memoriser(j);
+    await charger("code_inconnu");
+  } catch (e) {
+    message(t(e.message === "reseau" ? "erreur_reseau" : "erreur_generique"));
+  } finally {
+    bouton.disabled = false;
+  }
+};
+
+$("pas-moi").onclick = () => { memoriser(""); location.replace(location.pathname); };
+
+async function charger(cleSiInvalide) {
   try {
     moi = await appel("moi", { p_jeton: jeton });
-    if (!moi) { $("chargement").hidden = true; return message(t("lien_invalide")); }
+    if (!moi) { memoriser(""); jeton = ""; return afficherAccueil(cleSiInvalide); }
     [tirage, envies] = await Promise.all([appel("mon_tirage", { p_jeton: jeton }), appel("mes_envies", { p_jeton: jeton })]);
   } catch (e) {
     $("chargement").hidden = true;
     return message(t(e.message === "reseau" ? "erreur_reseau" : "erreur_generique"));
   }
+  memoriser(jeton);
   $("chargement").hidden = true;
+  $("pas-moi").hidden = false;
   afficher();
+}
+
+async function demarrer() {
+  traduire();
+  const depuisLien = !!jeton;
+  if (!jeton) jeton = memorise();
+  if (!jeton) return afficherAccueil();
+  await charger(depuisLien ? "lien_invalide" : "code_expire");
 }
 
 brancherSelecteur($("langue"), () => moi && afficher());

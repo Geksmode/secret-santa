@@ -26,4 +26,7 @@ const tir = await rpc("enregistrer_tirage", { p_edition_id: "00000000-0000-0000-
 assert.ok(tir.status >= 400, "enregistrer_tirage appelable avec anon");
 const inj = await rpc("ajouter_envie", { p_jeton: "faux", p_texte: "x", p_lien: "javascript:alert(1)" });
 assert.equal(inj.body, null);
+const code = await rpc("jeton_par_code", { p_code: "ABCD-EFGH" });
+assert.equal(code.status, 200, "jeton_par_code doit exister et être appelable");
+assert.equal(code.body, null, "un code inconnu ne renvoie rien");
 console.log("securite : OK");

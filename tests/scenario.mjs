@@ -57,6 +57,12 @@ try {
   const jeton = liens[0].jeton;
   assert.equal((await rpc("mon_tirage", { p_jeton: jeton })).statut, "tire");
 
+  // Code personnel : 8 caractères, retrouve le jeton (minuscules et tiret acceptés), refusé si désactivé
+  const code = liens[0].code;
+  assert.match(code, /^[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{8}$/);
+  assert.equal(await rpc("jeton_par_code", { p_code: `${code.slice(0, 4).toLowerCase()}-${code.slice(4)}` }), jeton);
+  assert.equal(new Set(liens.map((l) => l.code)).size, liens.length, "codes uniques");
+
   // Participant ajouté après tirage → à refaire
   await rpc("admin_participant_ajouter", { p_mdp: MDP, p_prenom: "E", p_foyer_id: null });
   assert.equal((await rpc("admin_etat", { p_mdp: MDP })).tirage_a_refaire, true);

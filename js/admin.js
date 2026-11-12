@@ -1,5 +1,6 @@
 import { appel, lancerTirage } from "./api.js";
 import { t, traduire, brancherSelecteur } from "./i18n.js";
+import { formaterCode } from "./code.js";
 
 const $ = (id) => document.getElementById(id);
 const RAISONS_CONNUES = new Set(["trop_peu", "foyer_trop_grand", "impossible", "deja_tire", "edition_inconnue"]);
@@ -76,7 +77,8 @@ function afficherLiens(liens) {
       try { await navigator.clipboard.writeText(url); b.textContent = t("copie"); }
       catch { window.prompt(l.prenom, url); }
     };
-    return el("li", {}, [el("div", { className: "ligne" }, [el("span", { textContent: l.prenom, style: "flex:1" }), b])]);
+    const nom = el("span", { style: "flex:1" }, [l.prenom, " · ", el("span", { className: "code-perso", textContent: formaterCode(l.code ?? "") })]);
+    return el("li", {}, [el("div", { className: "ligne" }, [nom, b])]);
   }));
 }
 
