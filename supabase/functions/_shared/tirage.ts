@@ -2,24 +2,25 @@
 // l'Edge Function (Deno) et par les tests (Node 24, type stripping).
 // N'utiliser que de la syntaxe TS « effaçable » (pas d'enum, pas de namespace).
 //
-// Règle absolue : personne ne se tire soi-même.
+// Règles absolues : personne ne se tire soi-même ni son conjoint.
 // Règle souple : pas quelqu'un de sa famille (et pas la personne de `precedent`, si fourni).
 // Si la règle souple ne peut pas être respectée pour tout le monde (ex. familles de 6 et 4),
 // on fait le mieux possible : le MINIMUM d'« entorses », tiré au hasard parmi tous les tirages
 // qui atteignent ce minimum.
 
-export type Participant = { id: string; foyer: string | null };
+export type Participant = { id: string; foyer: string | null; conjoint?: string | null };
 export type Paire = { donneur: string; receveur: string };
 export type Resultat =
   | { ok: true; paires: Paire[]; entorses: number }
-  | { ok: false; raison: "trop_peu" };
+  | { ok: false; raison: "trop_peu" | "impossible" };
 
 const ESSAIS_PAR_REJET = 5000;
-const INTERDIT = 1e6; // coût de « se tirer soi-même » : jamais choisi tant que n >= 2
+const INTERDIT = 1e6; // coût de « soi-même » ou « son conjoint » : jamais retenu
 const ENTORSE = 1000; // coût d'un cadeau dans la même famille ; le bruit aléatoire reste < 1
 
 export function estAutorise(d: Participant, r: Participant, precedent: Map<string, string>): boolean {
   if (d.id === r.id) return false;
+  if (d.conjoint && d.conjoint === r.id) return false;
   if (d.foyer !== null && d.foyer === r.foyer) return false;
   if (precedent.get(d.id) === r.id) return false;
   return true;
@@ -74,8 +75,9 @@ export function tirer(
   const n = participants.length;
   if (n < 2) return { ok: false, raison: "trop_peu" };
 
-  const soi = (d: number, r: number) => d === r;
-  const entorse = participants.map((d, i) => participants.map((r, j) => i !== j && !estAutorise(d, r, precedent)));
+  const interdit = participants.map((d, i) => participants.map((r, j) => i === j || (!!d.conjoint && d.conjoint === r.id)));
+  const soi = (d: number, r: number) => interdit[d][r];
+  const entorse = participants.map((d, i) => participants.map((r, j) => !interdit[i][j] && !estAutorise(d, r, precedent)));
   const compter = (perm: number[]) => perm.reduce((s, r, d) => s + (entorse[d][r] ? 1 : 0), 0);
   const valide = (perm: number[]) => perm.every((r, d) => !soi(d, r));
   const enPaires = (perm: number[], entorses: number): Resultat => ({
@@ -94,6 +96,7 @@ export function tirer(
   // 2) Minimum exact d'entorses (méthode hongroise ; le bruit aléatoire départage les solutions).
   const cout = indices.map((d) => indices.map((r) => (soi(d, r) ? INTERDIT : entorse[d][r] ? ENTORSE : 0) + rng() * 0.5));
   const optimal = affectationMin(cout);
+  if (!valide(optimal)) return { ok: false, raison: "impossible" };
   const minimum = compter(optimal);
 
   // 3) Uniforme parmi les tirages qui atteignent ce minimum, si on en trouve par rejet ; sinon l'optimal trouvé.

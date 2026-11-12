@@ -67,9 +67,13 @@ function afficher() {
     const foyer = el("select"); optionsFoyers(foyer, p.foyer_id);
     const actif = el("input", { type: "checkbox", checked: p.actif });
     const lab = el("label", { className: "muet" }, [actif, " " + t("actif")]);
+    const conjoint = el("select", { title: t("conjoint"), ariaLabel: t("conjoint") });
+    conjoint.replaceChildren(el("option", { value: "", textContent: t("sans_conjoint") }),
+      ...etat.participants.filter((q) => q.id !== p.id).map((q) => el("option", { value: q.id, textContent: q.prenom })));
+    conjoint.value = p.conjoint_id ?? "";
     const ok = el("button", { className: "bouton secondaire", textContent: t("enregistrer"),
-      onclick: () => action("admin_participant_modifier", { p_id: p.id, p_prenom: prenom.value, p_foyer_id: foyer.value || null, p_actif: actif.checked }) });
-    return el("li", {}, [el("div", { className: "ligne" }, [prenom, foyer, lab, ok])]);
+      onclick: () => enregistrerParticipant(p, { p_id: p.id, p_prenom: prenom.value, p_foyer_id: foyer.value || null, p_actif: actif.checked }, conjoint.value || null) });
+    return el("li", {}, [el("div", { className: "ligne" }, [prenom, foyer, conjoint, lab, ok])]);
   }));
 }
 
@@ -85,6 +89,15 @@ function afficherLiens(liens) {
     const nom = el("span", { style: "flex:1" }, [l.prenom, " · ", el("span", { className: "code-perso", textContent: formaterCode(l.code ?? "") })]);
     return el("li", {}, [el("div", { className: "ligne" }, [nom, b])]);
   }));
+}
+
+async function enregistrerParticipant(p, args, conjointId) {
+  message("");
+  try {
+    await appel("admin_participant_modifier", { p_mdp: mdp, ...args });
+    if (conjointId !== (p.conjoint_id ?? null)) await appel("admin_participant_conjoint", { p_mdp: mdp, p_id: p.id, p_conjoint_id: conjointId });
+  } catch (e) { return erreur(e); }
+  await charger();
 }
 
 async function action(nom, args) {

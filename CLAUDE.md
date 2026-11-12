@@ -5,6 +5,7 @@ spec et plan dans `docs/superpowers/`.
 
 ## Règles métier (validées par Thanh Huy)
 - Seule exclusion du tirage : soi-même et **sa propre famille**. Pas de règle « an dernier » (retirée le 2026-11-12).
+- Jamais à son **conjoint** (`participants.conjoint_id`, lien symétrique), même dans un tirage assoupli : règle absolue comme « soi-même ».
 - Si une famille dépasse la moitié des participants : tirage quand même, avec le **minimum** de cadeaux internes
   (`editions.meme_famille`), tiré au hasard parmi les tirages minimaux. Jamais soi-même.
 - La base contient la vraie famille (LE 6, NGUYEN 4) : ne lancer aucun test qui écrit (`scenario.mjs` refuse de lui-même).

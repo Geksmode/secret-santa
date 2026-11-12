@@ -174,3 +174,52 @@ test("le tirage varie (pas toujours le même résultat)", () => {
   }
   assert.ok(vus.size > 40);
 });
+
+// ---------- Couples : on n'offre jamais à son conjoint, même quand le tirage est assoupli ----------
+
+function avecCouples(ps: Participant[], couples: [string, string][]): Participant[] {
+  const c = new Map<string, string>();
+  for (const [x, y] of couples) { c.set(x, y); c.set(y, x); }
+  return ps.map((p) => ({ ...p, conjoint: c.get(p.id) ?? null }));
+}
+function aucunConjoint(ps: Participant[], paires: Paire[]) {
+  const c = new Map(ps.map((p) => [p.id, p.conjoint ?? null]));
+  for (const x of paires) assert.notEqual(c.get(x.donneur), x.receveur, "cadeau à son conjoint");
+}
+
+test("estAutorise : pas son conjoint", () => {
+  const x = { id: "x", foyer: null, conjoint: "y" }, y = { id: "y", foyer: null, conjoint: "x" };
+  assert.equal(estAutorise(x, y, new Map()), false);
+});
+
+test("6 et 4 avec couples dans chaque famille : 2 cadeaux internes, jamais à son conjoint", () => {
+  const ps = avecCouples(familles({ A: 6, B: 4 }), [["A0", "A1"], ["A2", "A3"], ["A4", "A5"], ["B0", "B1"], ["B2", "B3"]]);
+  const rng = rngGraine(21);
+  const internes = new Set<string>();
+  for (let i = 0; i < 2000; i++) {
+    const r = tirer(ps, new Map(), rng);
+    assert.ok(r.ok);
+    if (!r.ok) return;
+    bijectionSansSoi(ps, r.paires);
+    aucunConjoint(ps, r.paires);
+    assert.equal(r.entorses, 2);
+    assert.equal(entorsesDe(ps, r.paires), 2);
+    for (const x of r.paires) if (x.donneur[0] === "A" && x.receveur[0] === "A") internes.add(x.donneur);
+  }
+  assert.equal(internes.size, 6, "chaque membre de A peut offrir en interne");
+});
+
+test("tout le monde dans la même famille, en couples : jamais à son conjoint", () => {
+  const ps = avecCouples(familles({ A: 4 }), [["A0", "A1"], ["A2", "A3"]]);
+  const rng = rngGraine(22);
+  for (let i = 0; i < 500; i++) {
+    const r = tirer(ps, new Map(), rng);
+    assert.ok(r.ok);
+    if (r.ok) { bijectionSansSoi(ps, r.paires); aucunConjoint(ps, r.paires); }
+  }
+});
+
+test("seulement un couple : impossible", () => {
+  const ps = avecCouples(familles({ A: 2 }), [["A0", "A1"]]);
+  assert.deepEqual(tirer(ps, new Map(), rngGraine(23)), { ok: false, raison: "impossible" });
+});

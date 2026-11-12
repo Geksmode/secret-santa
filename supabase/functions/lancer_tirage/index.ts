@@ -25,11 +25,11 @@ Deno.serve(async (req) => {
   if (!ed) return json({ ok: false, raison: "edition_inconnue" });
   if (ed.tiree) return json({ ok: false, raison: "deja_tire" });
 
-  const { data: ps, error: e1 } = await db.from("participants").select("id, foyer_id").eq("actif", true);
+  const { data: ps, error: e1 } = await db.from("participants").select("id, foyer_id, conjoint_id").eq("actif", true);
   if (e1) return json({ ok: false, raison: "erreur" }, 500);
-  const participants: Participant[] = ps.map((p) => ({ id: p.id, foyer: p.foyer_id }));
+  const participants: Participant[] = ps.map((p) => ({ id: p.id, foyer: p.foyer_id, conjoint: p.conjoint_id }));
 
-  // Pas soi-même ; pas sa propre famille, sauf si c'est impossible : alors le minimum de cadeaux internes
+  // Jamais soi-même ni son conjoint ; pas sa propre famille, sauf si c'est impossible : alors le minimum de cadeaux internes
   // (pas de règle « an dernier », choix de Thanh Huy).
   const res = tirer(participants, new Map(), () => crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296);
   if (!res.ok) return json({ ok: false, raison: res.raison });
