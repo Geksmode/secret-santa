@@ -22,6 +22,7 @@ export function t(cle, vars = {}) {
 export function traduire(racine = document) {
   racine.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
   racine.querySelectorAll("[data-i18n-placeholder]").forEach((el) => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+  racine.querySelectorAll("[data-i18n-aria]").forEach((el) => { el.setAttribute("aria-label", t(el.dataset.i18nAria)); });
   document.title = t("titre");
 }
 

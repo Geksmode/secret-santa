@@ -1,6 +1,9 @@
 import { appel } from "./api.js";
 import { t, traduire, brancherSelecteur, formaterDate } from "./i18n.js";
 import { lienValide, domaine } from "./liens.js";
+import { brancherRevelation } from "./revelation.js";
+
+let revelationBranchee = false;
 
 const $ = (id) => document.getElementById(id);
 const jeton = new URLSearchParams(location.search).get("t") ?? "";
@@ -44,6 +47,15 @@ function afficher() {
     $("envies-receveur").replaceChildren(...(tirage.envies.length
       ? tirage.envies.map((v) => el("li", {}, lienEnvie(v)))
       : [el("li", { className: "muet", textContent: t("aucune_envie_receveur", { prenom: tirage.receveur }) })]));
+    if (!revelationBranchee) {
+      revelationBranchee = true;
+      brancherRevelation({
+        couvercle: $("couvercle"),
+        interieur: $("interieur"),
+        cle: `ss-ouvert-${ed.id}-${jeton.slice(0, 8)}`,
+        apresOuverture: () => { const b = $("bloc-envies-receveur"); b.hidden = false; b.classList.add("apparait"); },
+      });
+    }
   }
   afficherMesEnvies();
 }

@@ -1,31 +1,209 @@
+/* Thème « Nuit d'hiver » — matériaux en verre sur fond nuit, accent doré.
+   Principes (skill apple-design) : verre = couche fonctionnelle, jamais verre sur verre ;
+   texte plus contrasté sur le verre ; animations limitées à transform/opacity. */
+
 :root {
-  --fond: #f7f3ee; --carte: #ffffff; --texte: #2b2622; --muet: #6f665e;
-  --accent: #b3261e; --accent-texte: #ffffff; --bord: #e4dcd2; --info: #eef4f0; --alerte: #fdecea;
-  --rayon: 12px; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: dark;
+  --nuit-1: #0a0f24;
+  --nuit-2: #18204a;
+  --nuit-3: #2b1f4d;
+  --texte: #f5f2ea;
+  --texte-2: rgba(235, 235, 245, 0.68);
+  --or: #e9c46a;
+  --or-fonce: #c99a3b;
+  --sur-or: #1c1630;
+  --verre: rgba(255, 255, 255, 0.075);
+  --verre-bord: rgba(255, 255, 255, 0.14);
+  --verre-haut: rgba(255, 255, 255, 0.22);
+  --champ: rgba(255, 255, 255, 0.06);
+  --champ-bord: rgba(255, 255, 255, 0.16);
+  --alerte: rgba(255, 105, 97, 0.16);
+  --alerte-bord: rgba(255, 105, 97, 0.45);
+  --info: rgba(233, 196, 106, 0.14);
+  --info-bord: rgba(233, 196, 106, 0.45);
+  --rayon: 20px;
+  --rayon-petit: 12px;
+  --ombre: 0 12px 32px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.25);
+  font: 100%/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
-@media (prefers-color-scheme: dark) {
-  :root { --fond: #1c1a18; --carte: #262321; --texte: #f1ece6; --muet: #a89f96; --bord: #3a3531;
-          --accent: #e0574e; --info: #22302a; --alerte: #3a2220; }
-}
+
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--fond); color: var(--texte); line-height: 1.5; }
-.page { max-width: 760px; margin: 0 auto; padding: 16px 16px 48px; }
-.entete { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-.entete h1 { margin: 0; font-size: 1.5rem; }
-.carte { background: var(--carte); border: 1px solid var(--bord); border-radius: var(--rayon); padding: 16px; margin-bottom: 16px; }
-.carte h2 { margin: 0 0 8px; font-size: 1.15rem; }
+
+html { background: var(--nuit-1); }
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--texte);
+  background: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+/* Fond fixe sur un calque à part : pas de background-attachment: fixed (lent sur iPad) */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(1.5px 1.5px at 12% 18%, rgba(255, 255, 255, 0.55), transparent 60%),
+    radial-gradient(1px 1px at 78% 12%, rgba(255, 255, 255, 0.45), transparent 60%),
+    radial-gradient(1.5px 1.5px at 62% 34%, rgba(255, 255, 255, 0.35), transparent 60%),
+    radial-gradient(1px 1px at 28% 62%, rgba(255, 255, 255, 0.35), transparent 60%),
+    radial-gradient(1px 1px at 88% 72%, rgba(255, 255, 255, 0.4), transparent 60%),
+    radial-gradient(1.5px 1.5px at 44% 88%, rgba(255, 255, 255, 0.3), transparent 60%),
+    radial-gradient(60% 45% at 85% 0%, rgba(233, 196, 106, 0.16), transparent 70%),
+    radial-gradient(70% 50% at 0% 100%, rgba(120, 90, 200, 0.25), transparent 70%),
+    linear-gradient(165deg, var(--nuit-1) 0%, var(--nuit-2) 55%, var(--nuit-3) 100%);
+}
+
+.page { max-width: 760px; margin: 0 auto; padding: 20px 16px 56px; }
+
+/* ---------- Typographie : approche optique (interlettrage selon la taille) ---------- */
+.entete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0 20px; }
+.entete h1 { margin: 0; font-size: 1.75rem; line-height: 1.1; letter-spacing: -0.02em; font-weight: 700; overflow-wrap: break-word; }
+.entete .ligne { flex-wrap: nowrap; flex-shrink: 0; }
+.entete select, .entete .ligne > select { flex: 0 0 auto; width: auto; padding: 8px 10px; }
+.carte h2 { margin: 0 0 6px; font-size: 1.1rem; line-height: 1.25; letter-spacing: -0.01em; font-weight: 650; }
+.muet { color: var(--texte-2); font-size: 0.95rem; letter-spacing: 0.005em; }
+.receveur { font-size: 2.75rem; line-height: 1.05; letter-spacing: -0.03em; font-weight: 750; color: var(--or); margin: 2px 0 10px; overflow-wrap: anywhere; }
+
+/* ---------- Matériau verre ---------- */
+.carte {
+  position: relative;
+  background: var(--verre);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid var(--verre-bord);
+  border-top-color: var(--verre-haut); /* lumière qui accroche le bord supérieur */
+  border-radius: var(--rayon);
+  box-shadow: var(--ombre);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
 .ligne { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .ligne > input, .ligne > select { flex: 1 1 160px; min-width: 0; }
-input, select { font: inherit; padding: 8px 10px; border: 1px solid var(--bord); border-radius: 8px; background: var(--carte); color: var(--texte); }
-.bouton { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-texte); cursor: pointer; }
-.bouton.secondaire { background: transparent; color: var(--accent); }
-.bouton.danger { background: transparent; color: var(--accent); border-color: var(--bord); }
-.bouton:disabled { opacity: .5; cursor: default; }
-.alerte { padding: 10px 12px; border-radius: 8px; background: var(--alerte); margin: 8px 0; }
-.alerte.info { background: var(--info); }
+
+input, select {
+  font: inherit;
+  color: var(--texte);
+  padding: 10px 12px;
+  border-radius: var(--rayon-petit);
+  border: 1px solid var(--champ-bord);
+  background: var(--champ);
+  outline: none;
+  transition: border-color 120ms ease-out, box-shadow 120ms ease-out;
+}
+input::placeholder { color: rgba(235, 235, 245, 0.45); }
+input:focus-visible, select:focus-visible { border-color: var(--or); box-shadow: 0 0 0 3px rgba(233, 196, 106, 0.28); }
+select option { background: var(--nuit-2); color: var(--texte); }
+input[type="checkbox"] { accent-color: var(--or); width: 1.1em; height: 1.1em; padding: 0; }
+input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.85); }
+label { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ---------- Boutons : retour au moment de l'appui, pas au relâchement ---------- */
+.bouton {
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: linear-gradient(180deg, var(--or) 0%, var(--or-fonce) 100%);
+  color: var(--sur-or);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 100ms ease-out, filter 100ms ease-out;
+}
+.bouton:active { transform: scale(0.97); filter: brightness(0.92); }
+.bouton:focus-visible { outline: 3px solid rgba(233, 196, 106, 0.55); outline-offset: 2px; }
+.bouton.secondaire { background: rgba(255, 255, 255, 0.08); color: var(--or); border-color: rgba(233, 196, 106, 0.35); }
+.bouton.danger { background: transparent; color: #ff8a80; border-color: rgba(255, 138, 128, 0.35); }
+.bouton:disabled { opacity: 0.45; cursor: default; transform: none; filter: none; }
+
+/* ---------- Messages ---------- */
+.alerte { padding: 12px 14px; border-radius: var(--rayon-petit); background: var(--alerte); border: 1px solid var(--alerte-bord); margin: 8px 0 16px; }
+.alerte.info { background: var(--info); border-color: var(--info-bord); }
+
 .liste { list-style: none; margin: 0; padding: 0; }
-.liste > li { padding: 10px 0; border-top: 1px solid var(--bord); overflow-wrap: anywhere; }
+.liste > li { padding: 12px 0; border-top: 1px solid rgba(255, 255, 255, 0.08); overflow-wrap: anywhere; }
 .liste > li:first-child { border-top: 0; }
-.muet { color: var(--muet); font-size: .95rem; }
-.receveur { font-size: 2rem; font-weight: 700; margin: 4px 0 8px; overflow-wrap: anywhere; }
+.liste a { color: var(--or); text-decoration: none; }
+.liste a:hover { text-decoration: underline; }
+
 [hidden] { display: none !important; }
+
+/* ---------- Paquet cadeau à ouvrir ---------- */
+.revelation { position: relative; min-height: 210px; border-radius: var(--rayon-petit); }
+.revelation.ouverte { min-height: 0; }
+.revelation .interieur { padding: 8px 2px; transform-origin: 50% 60%; will-change: transform, opacity; }
+
+.couvercle {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 16px;
+  border: 0;
+  border-radius: var(--rayon-petit);
+  color: #fff7e6;
+  font: inherit;
+  cursor: grab;
+  touch-action: none; /* le glissé vertical appartient au paquet, pas au défilement */
+  user-select: none;
+  -webkit-user-select: none;
+  will-change: transform, opacity;
+  /* Couche opaque (pas de verre sur verre) : papier rouge + ruban doré en croix */
+  background:
+    linear-gradient(90deg, transparent calc(50% - 14px), var(--or) calc(50% - 14px), #f6dc96 50%, var(--or-fonce) calc(50% + 14px), transparent calc(50% + 14px)),
+    linear-gradient(180deg, transparent calc(42% - 12px), var(--or) calc(42% - 12px), #f6dc96 42%, var(--or-fonce) calc(42% + 12px), transparent calc(42% + 12px)),
+    radial-gradient(120% 90% at 30% 10%, #c7354a 0%, #8e1b2c 55%, #5e0f1f 100%);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+.couvercle:active { cursor: grabbing; }
+.couvercle:focus-visible { outline: 3px solid rgba(233, 196, 106, 0.7); outline-offset: 3px; }
+.noeud { position: absolute; left: 50%; top: 42%; width: 0; height: 0; }
+.noeud::before, .noeud::after {
+  content: "";
+  position: absolute;
+  width: 38px; height: 24px;
+  top: -24px;
+  border: 6px solid var(--or);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: rgba(0, 0, 0, 0.08);
+}
+.noeud::before { right: 0; transform: rotate(-22deg); transform-origin: 100% 100%; }
+.noeud::after { left: 0; transform: rotate(22deg); transform-origin: 0 100%; }
+.couvercle .aide {
+  position: relative;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  background: rgba(40, 6, 14, 0.55);
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+.couvercle .fleche { position: relative; font-size: 1.1rem; line-height: 1; opacity: 0.9; }
+
+.apparait { animation: apparait 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes apparait { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Accessibilité ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .couvercle { transition: opacity 200ms ease; }
+  .couvercle.ouvert-doux { opacity: 0; }
+  .apparait { animation: fondu 200ms ease both; }
+  @keyframes fondu { from { opacity: 0; } to { opacity: 1; } }
+  .bouton { transition: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .carte { background: #1a2148; -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (prefers-contrast: more) {
+  .carte { background: #10163a; border-color: rgba(255, 255, 255, 0.6); }
+  .muet { color: #e8e8f0; }
+}
