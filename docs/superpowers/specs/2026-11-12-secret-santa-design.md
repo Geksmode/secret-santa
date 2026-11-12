@@ -9,7 +9,7 @@ Outil web pour organiser le Secret Santa de la famille, réutilisable chaque ann
 | Exigence | Décision |
 |---|---|
 | Révélation | Chaque participant reçoit un **lien personnel** et ne voit que son propre tirage |
-| Exclusions | Pas soi-même, pas un membre de son **foyer**, pas la **même personne que l'édition précédente** |
+| Exclusions | Pas soi-même, pas un membre de sa **famille** (table `foyers`, affichée « Famille »). Règle « pas la même personne que l'an dernier » **retirée** le 2026-11-12 à la demande de Thanh Huy |
 | Taille | 10 à 30 participants |
 | Appareils | Téléphone, tablette, ordinateur |
 | Extras | Listes d'envies, budget et date d'échange, historique multi-années |

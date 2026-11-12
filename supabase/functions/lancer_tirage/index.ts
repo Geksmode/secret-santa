@@ -29,14 +29,8 @@ Deno.serve(async (req) => {
   if (e1) return json({ ok: false, raison: "erreur" }, 500);
   const participants: Participant[] = ps.map((p) => ({ id: p.id, foyer: p.foyer_id }));
 
-  const precedent = new Map<string, string>();
-  const { data: avant } = await db.from("editions").select("id").lt("annee", ed.annee).order("annee", { ascending: false }).limit(1).maybeSingle();
-  if (avant) {
-    const { data: tp } = await db.from("tirages").select("donneur_id, receveur_id").eq("edition_id", avant.id);
-    for (const t of tp ?? []) precedent.set(t.donneur_id, t.receveur_id);
-  }
-
-  const res = tirer(participants, precedent, () => crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296);
+  // Règle unique : pas soi-même, pas sa propre famille (pas de règle « an dernier », choix de Thanh Huy).
+  const res = tirer(participants, new Map(),() => crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296);
   if (!res.ok) {
     if (res.raison === "foyer_trop_grand" && res.detail) {
       const { data: f } = await db.from("foyers").select("nom").eq("id", res.detail).maybeSingle();

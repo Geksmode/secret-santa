@@ -66,6 +66,16 @@ try {
   // Foyer trop grand
   for (const p of ["A3", "A4", "A5", "A6"]) await rpc("admin_participant_ajouter", { p_mdp: MDP, p_prenom: p, p_foyer_id: fA });
   assert.deepEqual(await lancer(ed), { ok: false, raison: "foyer_trop_grand", detail: "Foyer A" });
+
+  // Pas de règle « an dernier » : C et D, seuls participants, se tirent deux années de suite
+  for (const p of (await rpc("admin_etat", { p_mdp: MDP })).participants) {
+    if (!["C", "D"].includes(p.prenom)) {
+      await rpc("admin_participant_modifier", { p_mdp: MDP, p_id: p.id, p_prenom: p.prenom, p_foyer_id: p.foyer_id, p_actif: false });
+    }
+  }
+  const ed2098 = await rpc("admin_enregistrer_edition", { p_mdp: MDP, p_annee: 2098, p_budget: "", p_date: null });
+  assert.equal((await lancer(ed2098)).ok, true);
+  assert.deepEqual(await lancer(ed), { ok: true, nb: 2 }, "la règle « an dernier » ne doit plus s'appliquer");
   console.log("scenario : OK");
 } finally {
   await vider();
