@@ -1,11 +1,11 @@
 import { appel } from "./api.js";
 import { t, traduire, brancherSelecteur, formaterDate } from "./i18n.js";
+import { lienValide, domaine } from "./liens.js";
 
 const $ = (id) => document.getElementById(id);
 const jeton = new URLSearchParams(location.search).get("t") ?? "";
 let moi = null, tirage = null, envies = [];
 
-const LIEN_OK = /^https?:\/\//i;
 function el(tag, props = {}, enfants = []) {
   const n = Object.assign(document.createElement(tag), props);
   n.append(...enfants);
@@ -18,13 +18,14 @@ function erreurEnvie(e) {
 }
 function verifier(texte, lien) {
   if (!texte.trim() || texte.trim().length > 500) return t("erreur_texte");
-  if (lien.trim() && !LIEN_OK.test(lien.trim())) return t("erreur_lien");
+  if (!lienValide(lien)) return t("erreur_lien");
   return "";
 }
 function lienEnvie(v) {
   const enfants = [el("span", { textContent: v.texte })];
-  if (v.lien && LIEN_OK.test(v.lien)) {
-    enfants.push(" ", el("a", { href: v.lien, textContent: new URL(v.lien).hostname, target: "_blank", rel: "noopener noreferrer" }));
+  const hote = domaine(v.lien);
+  if (hote) {
+    enfants.push(" ", el("a", { href: v.lien, textContent: hote, target: "_blank", rel: "noopener noreferrer" }));
   }
   return enfants;
 }

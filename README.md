@@ -33,14 +33,16 @@ node --env-file=.env tests/securite.mjs
 npx supabase functions deploy lancer_tirage --remote=fkfnrbgxrulfqeypudwb --no-verify-jwt --use-api
 ```
 
-- Changer le mot de passe admin (SQL Editor) :
+- Changer le mot de passe admin (SQL Editor). Il protège tout le secret et le site est public, sans limite de tentatives : utiliser un mot de passe **long et aléatoire (16 caractères ou plus)**, par exemple généré par un gestionnaire de mots de passe.
 
 ```sql
 insert into public.config (id, admin_hash)
-values (1, extensions.crypt('MOT_DE_PASSE', extensions.gen_salt('bf')))
+values (1, extensions.crypt('MOT_DE_PASSE', extensions.gen_salt('bf', 10)))
 on conflict (id) do update set admin_hash = excluded.admin_hash;
 ```
 
 ## Secret du tirage
 
-Aucun écran ni aucune fonction ne renvoie le tirage complet. Le propriétaire du projet Supabase peut techniquement lire la table `tirages` dans la console : ne pas l'ouvrir.
+Aucun écran ni aucune fonction ne renvoie le tirage complet. Le secret repose sur la discrétion de l'organisateur, qui pourrait techniquement :
+- lire la table `tirages` dans la console Supabase ;
+- ouvrir le lien personnel d'un autre participant (il les distribue).
