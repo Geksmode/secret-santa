@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Secret Santa</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="entete">
+      <h1 data-i18n="admin_titre"></h1>
+      <div class="ligne">
+        <select id="langue" aria-label="Langue"><option value="fr">FR</option><option value="en">EN</option></select>
+        <button id="deconnexion" class="bouton secondaire" data-i18n="se_deconnecter" hidden></button>
+      </div>
+    </header>
+
+    <div id="message" class="alerte" hidden></div>
+
+    <section id="connexion" class="carte">
+      <form id="form-connexion" class="ligne">
+        <input id="mdp" type="password" autocomplete="current-password" data-i18n-placeholder="mot_de_passe" required>
+        <button class="bouton" data-i18n="se_connecter"></button>
+      </form>
+    </section>
+
+    <div id="contenu" hidden>
+      <section class="carte">
+        <h2 data-i18n="edition"></h2>
+        <form id="form-edition" class="ligne">
+          <input id="annee" type="number" min="2000" max="2100" data-i18n-placeholder="annee" required>
+          <input id="budget" maxlength="40" data-i18n-placeholder="budget_libelle">
+          <input id="date" type="date" aria-label="date">
+          <button class="bouton secondaire" data-i18n="enregistrer"></button>
+        </form>
+        <p id="etat-tirage" class="muet"></p>
+        <div id="a-refaire" class="alerte" data-i18n="tirage_a_refaire" hidden></div>
+        <div class="ligne">
+          <button id="lancer" class="bouton" data-i18n="lancer_tirage"></button>
+          <button id="annuler" class="bouton danger" data-i18n="annuler_tirage"></button>
+        </div>
+      </section>
+
+      <section class="carte">
+        <h2 data-i18n="foyers"></h2>
+        <p class="muet" data-i18n="foyers_aide"></p>
+        <ul id="liste-foyers" class="liste"></ul>
+        <form id="form-foyer" class="ligne">
+          <input id="nom-foyer" maxlength="80" data-i18n-placeholder="nom_foyer" required>
+          <button class="bouton secondaire" data-i18n="ajouter"></button>
+        </form>
+      </section>
+
+      <section class="carte">
+        <h2 data-i18n="participants"></h2>
+        <ul id="liste-participants" class="liste"></ul>
+        <form id="form-participant" class="ligne">
+          <input id="prenom" maxlength="80" data-i18n-placeholder="prenom" required>
+          <select id="foyer-participant"></select>
+          <button class="bouton secondaire" data-i18n="ajouter"></button>
+        </form>
+      </section>
+
+      <section class="carte">
+        <h2 data-i18n="liens"></h2>
+        <p class="muet" data-i18n="liens_aide"></p>
+        <ul id="liste-liens" class="liste"></ul>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>
