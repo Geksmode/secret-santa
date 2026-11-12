@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="referrer" content="no-referrer">
+  <title>Secret Santa</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="entete">
+      <h1 id="bonjour" data-i18n="titre"></h1>
+      <select id="langue" aria-label="Langue"><option value="fr">FR</option><option value="en">EN</option></select>
+    </header>
+
+    <div id="message" class="alerte" hidden></div>
+    <p id="chargement" class="muet" data-i18n="chargement"></p>
+
+    <section id="bloc-tirage" class="carte" hidden>
+      <div id="tire" hidden>
+        <p class="muet" data-i18n="tu_offres"></p>
+        <p id="receveur" class="receveur"></p>
+        <p id="infos" class="muet"></p>
+        <h2 id="titre-envies-receveur"></h2>
+        <ul id="envies-receveur" class="liste"></ul>
+      </div>
+      <p id="pas-tire" data-i18n="pas_tire" hidden></p>
+      <p id="pas-edition" data-i18n="pas_d_edition" hidden></p>
+    </section>
+
+    <section id="bloc-envies" class="carte" hidden>
+      <h2 data-i18n="mes_envies"></h2>
+      <p class="muet" data-i18n="mes_envies_aide"></p>
+      <ul id="mes-envies" class="liste"></ul>
+      <form id="form-envie">
+        <div class="ligne">
+          <input id="envie-texte" maxlength="500" data-i18n-placeholder="envie_texte" required>
+        </div>
+        <div class="ligne" style="margin-top:8px">
+          <input id="envie-lien" type="url" maxlength="1000" data-i18n-placeholder="envie_lien">
+          <button class="bouton" data-i18n="ajouter"></button>
+        </div>
+      </form>
+    </section>
+  </main>
+  <script type="module" src="js/participant.js"></script>
+</body>
+</html>
