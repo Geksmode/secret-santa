@@ -4,6 +4,11 @@ import { formaterCode } from "./code.js";
 
 const $ = (id) => document.getElementById(id);
 const RAISONS_CONNUES = new Set(["trop_peu", "foyer_trop_grand", "impossible", "deja_tire", "edition_inconnue"]);
+// Nombre de cadeaux restés dans une même famille (tirage assoupli), ou "" s'il n'y en a pas.
+function noteMemeFamille(n) {
+  if (!n) return "";
+  return n === 1 ? t("meme_famille_1") : t("meme_famille_n", { n });
+}
 let mdp = (() => { try { return sessionStorage.getItem("ss-mdp") ?? ""; } catch { return ""; } })();
 let etat = null;
 
@@ -44,7 +49,7 @@ function afficher() {
   $("annee").value = ed?.annee ?? new Date().getFullYear();
   $("budget").value = ed?.budget ?? "";
   $("date").value = ed?.date_echange ?? "";
-  $("etat-tirage").textContent = ed?.tiree ? t("tirage_deja_fait") : "";
+  $("etat-tirage").textContent = ed?.tiree ? [t("tirage_deja_fait"), noteMemeFamille(ed.meme_famille)].filter(Boolean).join(" ") : "";
   $("a-refaire").hidden = !etat.tirage_a_refaire;
   $("lancer").disabled = !ed || ed.tiree;
   $("annuler").disabled = !ed || !ed.tiree;
@@ -114,7 +119,7 @@ $("form-participant").onsubmit = (ev) => {
 $("lancer").onclick = async () => {
   $("lancer").disabled = true; message("");
   const r = await lancerTirage(mdp, etat.edition.id);
-  if (r.ok) message(t("tirage_fait", { nb: r.nb }), true);
+  if (r.ok) message([t("tirage_fait", { nb: r.nb }), noteMemeFamille(r.meme_famille)].filter(Boolean).join(" "), true);
   else if (r.raison === "non_autorise") { deconnecter(); message(t("mdp_faux")); return; }
   else if (r.raison === "reseau") message(t("erreur_reseau"));
   else message(RAISONS_CONNUES.has(r.raison) ? t(`raison_${r.raison}`, { foyer: r.detail ?? "" }) : t("erreur_generique"));

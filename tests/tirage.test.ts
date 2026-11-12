@@ -75,18 +75,79 @@ test("2 participants sans foyer → échange mutuel", () => {
   assert.ok(r.ok);
 });
 
-test("foyer de plus de la moitié → foyer_trop_grand", () => {
-  const ps = [
-    { id: "a1", foyer: "A" }, { id: "a2", foyer: "A" }, { id: "a3", foyer: "A" },
-    { id: "x", foyer: null }, { id: "y", foyer: null },
-  ];
-  assert.deepEqual(tirer(ps, new Map()), { ok: false, raison: "foyer_trop_grand", detail: "A" });
+// ---------- Tirage assoupli : quand on ne peut pas séparer toutes les familles ----------
+
+function familles(tailles: Record<string, number>, seuls = 0): Participant[] {
+  const ps: Participant[] = [];
+  for (const [f, k] of Object.entries(tailles)) for (let i = 0; i < k; i++) ps.push({ id: `${f}${i}`, foyer: f });
+  for (let i = 0; i < seuls; i++) ps.push({ id: `s${i}`, foyer: null });
+  return ps;
+}
+function entorsesDe(ps: Participant[], paires: Paire[]): number {
+  const f = new Map(ps.map((p) => [p.id, p.foyer]));
+  return paires.filter((x) => f.get(x.donneur) !== null && f.get(x.donneur) === f.get(x.receveur)).length;
+}
+function bijectionSansSoi(ps: Participant[], paires: Paire[]) {
+  assert.equal(paires.length, ps.length);
+  assert.deepEqual(new Set(paires.map((x) => x.donneur)), new Set(ps.map((p) => p.id)));
+  assert.deepEqual(new Set(paires.map((x) => x.receveur)), new Set(ps.map((p) => p.id)));
+  for (const x of paires) assert.notEqual(x.donneur, x.receveur);
+}
+
+test("familles de 6 et 4 : exactement 2 cadeaux internes (le minimum), personne ne se tire soi-même", () => {
+  const ps = familles({ A: 6, B: 4 });
+  const rng = rngGraine(11);
+  for (let i = 0; i < 2000; i++) {
+    const r = tirer(ps, new Map(), rng);
+    assert.ok(r.ok);
+    if (!r.ok) return;
+    bijectionSansSoi(ps, r.paires);
+    assert.equal(entorsesDe(ps, r.paires), 2);
+    assert.equal(r.entorses, 2);
+  }
 });
 
-test("2 personnes qui se sont tirées l'an dernier → impossible", () => {
+test("famille de 3 sur 5 : 1 seul cadeau interne", () => {
+  const ps = familles({ A: 3 }, 2);
+  const r = tirer(ps, new Map(), rngGraine(12));
+  assert.ok(r.ok);
+  if (r.ok) { bijectionSansSoi(ps, r.paires); assert.equal(r.entorses, 1); assert.equal(entorsesDe(ps, r.paires), 1); }
+});
+
+test("tout le monde dans la même famille : tirage quand même, sans soi-même", () => {
+  const ps = familles({ A: 5 });
+  const r = tirer(ps, new Map(), rngGraine(13));
+  assert.ok(r.ok);
+  if (r.ok) { bijectionSansSoi(ps, r.paires); assert.equal(r.entorses, 5); }
+});
+
+test("tirage normal : 0 entorse annoncée", () => {
+  const r = tirer(famille(), new Map(), rngGraine(14));
+  assert.ok(r.ok);
+  if (r.ok) assert.equal(r.entorses, 0);
+});
+
+test("6 et 4 : le tirage assoupli varie et chaque membre de A peut être celui qui offre en interne", () => {
+  const ps = familles({ A: 6, B: 4 });
+  const rng = rngGraine(15);
+  const internes = new Set<string>();
+  const vus = new Set<string>();
+  for (let i = 0; i < 400; i++) {
+    const r = tirer(ps, new Map(), rng);
+    if (!r.ok) continue;
+    vus.add(JSON.stringify(r.paires.slice().sort((p, q) => p.donneur.localeCompare(q.donneur))));
+    for (const x of r.paires) if (x.donneur[0] === "A" && x.receveur[0] === "A") internes.add(x.donneur);
+  }
+  assert.equal(internes.size, 6);
+  assert.ok(vus.size > 300);
+});
+
+test("2 personnes qui se sont tirées l'an dernier : on refait le même échange (seule option)", () => {
   const ps = [{ id: "x", foyer: null }, { id: "y", foyer: null }];
   const prec = new Map([["x", "y"], ["y", "x"]]);
-  assert.deepEqual(tirer(ps, prec, rngGraine(4)), { ok: false, raison: "impossible" });
+  const r = tirer(ps, prec, rngGraine(4));
+  assert.ok(r.ok);
+  if (r.ok) assert.equal(r.entorses, 2);
 });
 
 test("cas serré mais possible : solution trouvée", () => {

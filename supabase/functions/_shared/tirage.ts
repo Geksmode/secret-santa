@@ -1,14 +1,22 @@
 // Algorithme pur du tirage Secret Santa. Aucune dépendance : importé par
 // l'Edge Function (Deno) et par les tests (Node 24, type stripping).
 // N'utiliser que de la syntaxe TS « effaçable » (pas d'enum, pas de namespace).
+//
+// Règle absolue : personne ne se tire soi-même.
+// Règle souple : pas quelqu'un de sa famille (et pas la personne de `precedent`, si fourni).
+// Si la règle souple ne peut pas être respectée pour tout le monde (ex. familles de 6 et 4),
+// on fait le mieux possible : le MINIMUM d'« entorses », tiré au hasard parmi tous les tirages
+// qui atteignent ce minimum.
 
 export type Participant = { id: string; foyer: string | null };
 export type Paire = { donneur: string; receveur: string };
 export type Resultat =
-  | { ok: true; paires: Paire[] }
-  | { ok: false; raison: "trop_peu" | "foyer_trop_grand" | "impossible"; detail?: string };
+  | { ok: true; paires: Paire[]; entorses: number }
+  | { ok: false; raison: "trop_peu" };
 
 const ESSAIS_PAR_REJET = 5000;
+const INTERDIT = 1e6; // coût de « se tirer soi-même » : jamais choisi tant que n >= 2
+const ENTORSE = 1000; // coût d'un cadeau dans la même famille ; le bruit aléatoire reste < 1
 
 export function estAutorise(d: Participant, r: Participant, precedent: Map<string, string>): boolean {
   if (d.id === r.id) return false;
@@ -26,27 +34,35 @@ function melanger<T>(t: T[], rng: () => number): T[] {
   return a;
 }
 
-// Appariement parfait par chemins augmentants (algorithme de Kuhn), ordre aléatoire.
-// Retourne receveurParDonneur (indices) ou null si aucun appariement complet.
-function apparier(n: number, autorise: boolean[][], rng: () => number): number[] | null {
-  const donneurDuReceveur = new Array<number>(n).fill(-1);
-  const voisins = autorise.map((ligne) => melanger(ligne.flatMap((ok, j) => (ok ? [j] : [])), rng));
-  const essayer = (d: number, vu: boolean[]): boolean => {
-    for (const r of voisins[d]) {
-      if (vu[r]) continue;
-      vu[r] = true;
-      if (donneurDuReceveur[r] === -1 || essayer(donneurDuReceveur[r], vu)) {
-        donneurDuReceveur[r] = d;
-        return true;
+// Affectation de coût minimal (méthode hongroise, O(n³)) : renvoie le receveur (indice) de chaque donneur.
+function affectationMin(cout: number[][]): number[] {
+  const n = cout.length;
+  const u = new Array<number>(n + 1).fill(0), v = new Array<number>(n + 1).fill(0);
+  const p = new Array<number>(n + 1).fill(0), chemin = new Array<number>(n + 1).fill(0);
+  for (let i = 1; i <= n; i++) {
+    p[0] = i;
+    let j0 = 0;
+    const minv = new Array<number>(n + 1).fill(Infinity);
+    const vu = new Array<boolean>(n + 1).fill(false);
+    do {
+      vu[j0] = true;
+      const i0 = p[j0];
+      let delta = Infinity, j1 = 0;
+      for (let j = 1; j <= n; j++) {
+        if (vu[j]) continue;
+        const c = cout[i0 - 1][j - 1] - u[i0] - v[j];
+        if (c < minv[j]) { minv[j] = c; chemin[j] = j0; }
+        if (minv[j] < delta) { delta = minv[j]; j1 = j; }
       }
-    }
-    return false;
-  };
-  for (const d of melanger([...Array(n).keys()], rng)) {
-    if (!essayer(d, new Array<boolean>(n).fill(false))) return null;
+      for (let j = 0; j <= n; j++) {
+        if (vu[j]) { u[p[j]] += delta; v[j] -= delta; } else minv[j] -= delta;
+      }
+      j0 = j1;
+    } while (p[j0] !== 0);
+    do { const j1 = chemin[j0]; p[j0] = p[j1]; j0 = j1; } while (j0);
   }
   const res = new Array<number>(n);
-  donneurDuReceveur.forEach((d, r) => (res[d] = r));
+  for (let j = 1; j <= n; j++) res[p[j] - 1] = j - 1;
   return res;
 }
 
@@ -58,23 +74,34 @@ export function tirer(
   const n = participants.length;
   if (n < 2) return { ok: false, raison: "trop_peu" };
 
-  const tailles = new Map<string, number>();
-  for (const p of participants) if (p.foyer !== null) tailles.set(p.foyer, (tailles.get(p.foyer) ?? 0) + 1);
-  for (const [foyer, k] of tailles) if (k > n - k) return { ok: false, raison: "foyer_trop_grand", detail: foyer };
-
-  const autorise = participants.map((d) => participants.map((r) => estAutorise(d, r, precedent)));
-  const enPaires = (rec: number[]): Resultat => ({
+  const soi = (d: number, r: number) => d === r;
+  const entorse = participants.map((d, i) => participants.map((r, j) => i !== j && !estAutorise(d, r, precedent)));
+  const compter = (perm: number[]) => perm.reduce((s, r, d) => s + (entorse[d][r] ? 1 : 0), 0);
+  const valide = (perm: number[]) => perm.every((r, d) => !soi(d, r));
+  const enPaires = (perm: number[], entorses: number): Resultat => ({
     ok: true,
-    paires: rec.map((r, d) => ({ donneur: participants[d].id, receveur: participants[r].id })),
+    entorses,
+    paires: perm.map((r, d) => ({ donneur: participants[d].id, receveur: participants[r].id })),
   });
-
-  // 1) Échantillonnage par rejet : uniforme parmi les tirages valides.
   const indices = [...Array(n).keys()];
+
+  // 1) Cas normal : échantillonnage par rejet, uniforme parmi les tirages sans aucune entorse.
   for (let e = 0; e < ESSAIS_PAR_REJET; e++) {
     const perm = melanger(indices, rng);
-    if (perm.every((r, d) => autorise[d][r])) return enPaires(perm);
+    if (valide(perm) && compter(perm) === 0) return enPaires(perm, 0);
   }
-  // 2) Repli : appariement aléatoire (pas parfaitement uniforme), exact pour détecter l'impossible.
-  const rec = apparier(n, autorise, rng);
-  return rec ? enPaires(rec) : { ok: false, raison: "impossible" };
+
+  // 2) Minimum exact d'entorses (méthode hongroise ; le bruit aléatoire départage les solutions).
+  const cout = indices.map((d) => indices.map((r) => (soi(d, r) ? INTERDIT : entorse[d][r] ? ENTORSE : 0) + rng() * 0.5));
+  const optimal = affectationMin(cout);
+  const minimum = compter(optimal);
+
+  // 3) Uniforme parmi les tirages qui atteignent ce minimum, si on en trouve par rejet ; sinon l'optimal trouvé.
+  if (minimum > 0) {
+    for (let e = 0; e < ESSAIS_PAR_REJET; e++) {
+      const perm = melanger(indices, rng);
+      if (valide(perm) && compter(perm) === minimum) return enPaires(perm, minimum);
+    }
+  }
+  return enPaires(optimal, minimum);
 }

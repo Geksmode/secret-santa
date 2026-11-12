@@ -29,17 +29,12 @@ Deno.serve(async (req) => {
   if (e1) return json({ ok: false, raison: "erreur" }, 500);
   const participants: Participant[] = ps.map((p) => ({ id: p.id, foyer: p.foyer_id }));
 
-  // Règle unique : pas soi-même, pas sa propre famille (pas de règle « an dernier », choix de Thanh Huy).
-  const res = tirer(participants, new Map(),() => crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296);
-  if (!res.ok) {
-    if (res.raison === "foyer_trop_grand" && res.detail) {
-      const { data: f } = await db.from("foyers").select("nom").eq("id", res.detail).maybeSingle();
-      return json({ ok: false, raison: res.raison, detail: f?.nom ?? "" });
-    }
-    return json({ ok: false, raison: res.raison });
-  }
+  // Pas soi-même ; pas sa propre famille, sauf si c'est impossible : alors le minimum de cadeaux internes
+  // (pas de règle « an dernier », choix de Thanh Huy).
+  const res = tirer(participants, new Map(), () => crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296);
+  if (!res.ok) return json({ ok: false, raison: res.raison });
 
-  const { error: e2 } = await db.rpc("enregistrer_tirage", { p_edition_id: ed.id, p_paires: res.paires });
+  const { error: e2 } = await db.rpc("enregistrer_tirage", { p_edition_id: ed.id, p_paires: res.paires, p_meme_famille: res.entorses });
   if (e2) return json({ ok: false, raison: e2.message.includes("deja_tire") ? "deja_tire" : "erreur" }, e2.message.includes("deja_tire") ? 200 : 500);
-  return json({ ok: true, nb: res.paires.length });
+  return json({ ok: true, nb: res.paires.length, meme_famille: res.entorses });
 });

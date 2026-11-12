@@ -69,9 +69,14 @@ try {
   await rpc("admin_annuler_tirage", { p_mdp: MDP, p_edition_id: ed });
   assert.equal((await rpc("mon_tirage", { p_jeton: jeton })).statut, "pas_tire");
 
-  // Foyer trop grand
+  // Famille trop grande (6 sur 11) : tirage quand même, avec le minimum de cadeaux internes (2×6−11 = 1)
   for (const p of ["A3", "A4", "A5", "A6"]) await rpc("admin_participant_ajouter", { p_mdp: MDP, p_prenom: p, p_foyer_id: fA });
-  assert.deepEqual(await lancer(ed), { ok: false, raison: "foyer_trop_grand", detail: "Foyer A" });
+  assert.deepEqual(await lancer(ed), { ok: true, nb: 11, meme_famille: 1 });
+  const etatAssoupli = await rpc("admin_etat", { p_mdp: MDP });
+  assert.equal(etatAssoupli.edition.meme_famille, 1);
+  assert.equal(etatAssoupli.tirage_a_refaire, false, "un tirage assoupli ne doit pas être signalé « à refaire »");
+  await rpc("admin_annuler_tirage", { p_mdp: MDP, p_edition_id: ed });
+  assert.equal((await rpc("admin_etat", { p_mdp: MDP })).edition.meme_famille, 0);
 
   // Pas de règle « an dernier » : C et D, seuls participants, se tirent deux années de suite
   for (const p of (await rpc("admin_etat", { p_mdp: MDP })).participants) {
@@ -81,7 +86,7 @@ try {
   }
   const ed2098 = await rpc("admin_enregistrer_edition", { p_mdp: MDP, p_annee: 2098, p_budget: "", p_date: null });
   assert.equal((await lancer(ed2098)).ok, true);
-  assert.deepEqual(await lancer(ed), { ok: true, nb: 2 }, "la règle « an dernier » ne doit plus s'appliquer");
+  assert.deepEqual(await lancer(ed), { ok: true, nb: 2, meme_famille: 0 }, "la règle « an dernier » ne doit plus s'appliquer");
   console.log("scenario : OK");
 } finally {
   await vider();
